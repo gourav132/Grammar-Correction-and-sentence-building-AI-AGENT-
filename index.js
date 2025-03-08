@@ -17,8 +17,20 @@ app.post("/correct-grammar", async (req, res) => {
 
   try {
     // const prompt = `Rewrite the sentence with correct grammar and sentence formatting. The sentence is most likely about a web/software developer or their project: ${sentence}`;
-    const prompt = `Rewrite the following text with correct grammar, formatting, and structure while maintaining its original meaning:
-]" ${sentence}`;
+    const prompt = `Rewrite the following text with correct grammar, formatting, and structure while maintaining its original meaning: " ${sentence} " [Instruction for the response: just give me 4 options in json format for example for the sentence 'I want to follow up about the degree cerificate i was going'  the response format i need is  [
+    {
+        "option": "I am writing to follow up on my degree certificate."
+    },
+    {
+        "option": "I'd like to follow up regarding my degree certificate."
+    },
+    {
+        "option": "Following up on the status of my degree certificate."
+    },
+    {
+        "option": "I'm following up on the degree certificate I requested."
+    }
+]]`;
     const result = await model.generateContent(prompt);
     const responseText = await result.response.text();
 
