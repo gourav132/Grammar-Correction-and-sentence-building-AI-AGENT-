@@ -137,4 +137,70 @@ app.post("/reset-history", async (req, res) => {
   }
 });
 
+// Therapist AI Chat Route
+const therapistHistory = {};
+
+app.post("/therapist-chat", async (req, res) => {
+  const { userId, message } = req.body;
+
+  if (!userId || !message) {
+    return res.status(400).json({ error: "User ID and message are required" });
+  }
+
+  // Initialize or update conversation history
+  if (!therapistHistory[userId]) {
+    therapistHistory[userId] = [];
+  }
+
+  therapistHistory[userId].push({ role: "user", content: message });
+
+  try {
+    // Build conversation context string
+    const historyStr = therapistHistory[userId]
+      .map((msg) => `${msg.role === "user" ? "User" : "AI"}: ${msg.content}`)
+      .join("\n");
+
+    const prompt = `You are a compassionate and supportive AI mental health assistant. Your role is to engage in empathetic, non-judgmental conversations with users who may be experiencing emotional challenges.
+
+Always respond in a calm, thoughtful, and caring tone. Offer emotional support, active listening, and simple coping strategies. Never give medical advice or diagnoses.
+
+If the user is in crisis or at risk of self-harm, encourage them to reach out to a mental health professional or emergency services immediately.
+
+Use the ongoing conversation history below to understand the user’s emotional state and continue the conversation naturally.
+
+Use short, friendly, and comforting replies. Ask gentle questions to help the user reflect.
+
+---
+
+Conversation so far:
+${historyStr}
+
+User: ${message}
+AI:`;
+
+    const result = await model.generateContent(prompt);
+    const aiResponse = (await result.response.text()).trim();
+
+    therapistHistory[userId].push({ role: "ai", content: aiResponse });
+
+    res.json({ therapistResponse: aiResponse });
+  } catch (error) {
+    res.status(500).json({ error: "AI model error", details: error.message });
+  }
+});
+
+app.post("/therapist-reset", (req, res) => {
+  const { userId } = req.body;
+
+  if (userId) {
+    delete therapistHistory[userId];
+    return res.json({ message: `Therapist chat history reset for ${userId}` });
+  } else {
+    Object.keys(therapistHistory).forEach(
+      (key) => delete therapistHistory[key]
+    );
+    return res.json({ message: "All therapist chat histories reset" });
+  }
+});
+
 app.listen(5000, () => console.log("AI Agent running on port 5000"));
